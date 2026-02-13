@@ -63,6 +63,9 @@ ssh -4 admin@clab-simple-lab-sonic
 
 ## Issues
 
+### QEMU in docker
+I use the SONiC virtual machine image (sonic-vs.img.gz) running under QEMU inside a Docker container (via vrnetlab (https://github.com/srl-labs/vrnetlab)), rather than the SONiC Docker image (docker-sonic-vs.gz). The VM image is closer to a real SONiC deployment: inside the VM, each SONiC service (bgp, swss, syncd, etc.) runs in its own Docker container, just like on physical hardware. The Docker image, by contrast, runs everything under a single supervisord process.
+
 ### Building Docker container with warp on
 warp must be turned off before running `sonic-build-container-from-qcow2.sh`.
 
