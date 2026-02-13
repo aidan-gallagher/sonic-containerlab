@@ -50,6 +50,18 @@ ssh -4 admin@clab-simple-lab-sonic
 
 
 
+### Validate
+
+Run tests against the deployed lab (requires `pytest` and `paramiko`):
+```
+cd simple-lab
+pytest tests/validate.py -v
+```
+
+This runs device health checks (containers, FRR daemons, Redis) and
+network tests (interfaces up, correct IPs, end-to-end ping).
+
+
 ## Project Structure
 
 ```
@@ -58,7 +70,9 @@ ssh -4 admin@clab-simple-lab-sonic
 ├── sonic-build-container-from-qcow2.sh   # Builds the vrnetlab Docker image
 └── simple-lab/
     ├── simple-lab.clab.yml                # Containerlab topology
-    └── config_db.json                     # SONiC startup configuration
+    ├── config_db.json                     # SONiC startup configuration
+    └── tests/
+        └── validate.py                    # Automated validation tests
 ```
 
 ## Issues
