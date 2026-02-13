@@ -14,6 +14,7 @@ Linux server containers, with pytest-based validation tests.
 
 ```
 scripts/
+├── install-dependencies.sh            # Installs all apt dependencies
 ├── runlab.sh                          # Generic lifecycle: [build →] deploy → wait → test → cleanup
 └── sonic-build-container-from-qcow2.sh  # Builds vrnetlab Docker image from SONiC qcow2
 simple-lab/
@@ -75,7 +76,7 @@ containerlab destroy
 - Docker with KVM support (`/dev/kvm` must exist)
 - Python 3 with `pytest` and `paramiko`
 
-No `requirements.txt` exists. Install test deps: `pip install pytest paramiko`
+Install everything with: `sudo ./scripts/install-dependencies.sh`
 
 ## Code Style Guidelines
 
