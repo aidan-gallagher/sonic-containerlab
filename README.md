@@ -13,7 +13,7 @@
 2. Create docker image from VS qcow image.
 
 ```bash
-./sonic-build-container-from-qcow2.sh /path/to/sonic-vs.img.gz
+./scripts/sonic-build-container-from-qcow2.sh /path/to/sonic-vs.img.gz
 ```
 
 3. Deploy the simple lab
@@ -67,7 +67,9 @@ network tests (interfaces up, correct IPs, end-to-end ping).
 ```
 .
 ├── README.md
-├── sonic-build-container-from-qcow2.sh   # Builds the vrnetlab Docker image
+├── scripts/
+│   ├── runlab.sh                          # Generic lifecycle: [build →] deploy → wait → test → cleanup
+│   └── sonic-build-container-from-qcow2.sh  # Builds the vrnetlab Docker image
 └── simple-lab/
     ├── simple-lab.clab.yml                # Containerlab topology
     ├── config_db.json                     # SONiC startup configuration
@@ -80,7 +82,7 @@ network tests (interfaces up, correct IPs, end-to-end ping).
 I use the SONiC virtual machine image (sonic-vs.img.gz) running under QEMU inside a Docker container (via vrnetlab (https://github.com/srl-labs/vrnetlab)), rather than the SONiC Docker image (docker-sonic-vs.gz). The VM image is closer to a real SONiC deployment: inside the VM, each SONiC service (bgp, swss, syncd, etc.) runs in its own Docker container, just like on physical hardware. The Docker image, by contrast, runs everything under a single supervisord process.
 
 ### Building Docker container with warp on
-warp must be turned off before running `sonic-build-container-from-qcow2.sh`.
+warp must be turned off before running `scripts/sonic-build-container-from-qcow2.sh`.
 
 
 ### Cloudflare WARP and IPv6
@@ -159,4 +161,4 @@ with open('config_db.json', 'w') as f:
   config). This would remove the manual recapture step when switching images.
 - **Tier 2/3 colo lab** -- eBGP topology with an edge router + 2 SONiC ToRs
   + servers, matching Cloudflare's standalone colo design.
-- **GitLab CI pipeline** -- run `runlab.sh` in CI to validate on every push.
+- **GitLab CI pipeline** -- run `./scripts/runlab.sh --lab simple-lab --image <path>` in CI to validate on every push.
