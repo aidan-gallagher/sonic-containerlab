@@ -4,7 +4,7 @@ topology:
   nodes:
     sonic:
       kind: sonic-vm
-      image: vrnetlab/sonic_sonic-vs:202405
+      image: vrnetlab/sonic_sonic-vs:latest
       startup-config: config_db.json
 
     server1:
