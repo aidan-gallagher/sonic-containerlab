@@ -11,6 +11,7 @@ Usage:
 """
 
 import json
+import re
 import socket
 import subprocess
 
@@ -150,10 +151,63 @@ class TestHealth:
         for daemon in ["zebra", "bgpd", "staticd"]:
             assert daemon in out, f"{daemon} not running"
 
+    def test_no_container_restarts(self, sonic):
+        """No containers are in a restart loop."""
+        out = sonic.run(
+            "docker ps --format '{{.Names}} {{.Status}}' | grep -i restarting || true"
+        )
+        assert not out, f"Containers restarting: {out}"
+
+    def test_config_db_readable(self, sonic):
+        """CONFIG_DB can be parsed by sonic-cfggen."""
+        out = sonic.run("sonic-cfggen -d --print-data > /dev/null 2>&1; echo $?")
+        assert out == "0", "sonic-cfggen failed to parse CONFIG_DB"
+
+    def test_config_db_valid_json(self, sonic):
+        """config_db.json on disk is valid JSON."""
+        out = sonic.run(
+            'python3 -c "import json; json.load(open('
+            "'/etc/sonic/config_db.json'))\""
+            " 2>&1; echo $?"
+        )
+        assert out.endswith("0"), "config_db.json is not valid JSON"
+
+    def test_appl_db_populated(self, sonic):
+        """APPL_DB has entries (services wrote state)."""
+        out = sonic.run("redis-cli -n 0 DBSIZE")
+        match = re.search(r"\d+", out)
+        assert match, f"Could not parse APPL_DB size: {out}"
+        count = int(match.group())
+        assert count > 10, f"APPL_DB has only {count} keys"
+
+    def test_asic_db_populated(self, sonic):
+        """ASIC_DB has entries (ASIC is programmed)."""
+        out = sonic.run("redis-cli -n 1 DBSIZE")
+        match = re.search(r"\d+", out)
+        assert match, f"Could not parse ASIC_DB size: {out}"
+        count = int(match.group())
+        assert count > 10, f"ASIC_DB has only {count} keys"
+
     def test_no_core_dumps(self, sonic):
         """No core dumps exist on the device."""
         out = sonic.run("find /var/core -type f 2>/dev/null | wc -l")
         assert out == "0", f"Found {out} core dump(s) in /var/core"
+
+    def test_no_oom_kills(self, sonic):
+        """No OOM (Out of Memory) kill events in dmesg."""
+        out = sonic.run("dmesg | grep -i 'killed process' || true")
+        assert not out, f"OOM kills detected: {out}"
+
+    def test_no_kernel_panics(self, sonic):
+        """No kernel panics or call traces in dmesg."""
+        out = sonic.run("dmesg | grep -iE 'panic|call trace|out of memory' || true")
+        assert not out, f"Kernel issues in dmesg: {out}"
+
+    def test_no_zombie_processes(self, sonic):
+        """No excessive zombie processes."""
+        out = sonic.run("ps aux | awk '$8 ~ /Z/' | wc -l")
+        count = int(out)
+        assert count <= 5, f"Found {count} zombie processes"
 
 
 # =============================================================================
