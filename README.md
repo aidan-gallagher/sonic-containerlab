@@ -18,7 +18,7 @@
 
 3. Deploy the simple lab
 ```
-cd simplelab
+cd simple-lab
 containerlab deploy
 ```
 
@@ -38,13 +38,13 @@ containerlab graph
 ### Access
 Access Linux server: 
 ```
-docker exec -it clab-sonic-lab-server1 bash
+docker exec -it clab-simple-lab-server1 bash
 or
-docker exec -it clab-sonic-lab-server2 bash
+docker exec -it clab-simple-lab-server2 bash
 ```
 Access SONiC switch
 ```
-ssh -4 admin@clab-sonic-lab-sonic
+ssh -4 admin@clab-simple-lab-sonic
 ```
 
 
@@ -56,8 +56,8 @@ ssh -4 admin@clab-sonic-lab-sonic
 .
 ├── README.md
 ├── sonic-build-container-from-qcow2.sh   # Builds the vrnetlab Docker image
-└── lab/
-    ├── sonic-lab.clab.yml                 # Containerlab topology
+└── simple-lab/
+    ├── simple-lab.clab.yml                # Containerlab topology
     └── config_db.json                     # SONiC startup configuration
 ```
 
@@ -74,7 +74,7 @@ to connect:
 
 ```bash
 # This will be slow (~45s)
-ssh -o PubkeyAuthentication=no admin@clab-sonic-lab-sonic
+ssh -o PubkeyAuthentication=no admin@clab-simple-lab-sonic
 ```
 
 **Root cause**: Containerlab assigns each node an IPv6 GUA (Global Unicast
@@ -94,7 +94,7 @@ ip -6 route get 3fff:172:20:20::3
 **Workaround**: Force IPv4 with the `-4` flag:
 
 ```bash
-ssh -4 -o PubkeyAuthentication=no admin@clab-sonic-lab-sonic
+ssh -4 -o PubkeyAuthentication=no admin@clab-simple-lab-sonic
 ```
 
 IPv4 is unaffected because `172.20.20.0/24` is RFC 1918 private space,

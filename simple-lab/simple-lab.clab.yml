@@ -1,4 +1,4 @@
-name: sonic-lab
+name: simple-lab
 
 topology:
   nodes:
