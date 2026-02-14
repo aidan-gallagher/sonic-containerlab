@@ -73,18 +73,21 @@ fi
 
 echo "==> Installing apt dependencies ..."
 apt-get update -qy
-apt-get install -y --no-install-recommends \
-    curl \
-    docker.io \
-    python3 \
-    python3-paramiko \
-    python3-pytest \
-    yq
 
-# On Debian Trixie+, the docker CLI is a separate package from docker.io
-if apt-cache show docker-cli &>/dev/null; then
-    apt-get install -y --no-install-recommends docker-cli
+# Build the package list, skipping docker.io if Docker is already installed
+# (e.g., from Docker's official repo which conflicts with Debian's docker.io)
+APT_PACKAGES=(curl python3 python3-paramiko python3-pytest yq)
+if ! command -v docker &>/dev/null; then
+    APT_PACKAGES+=(docker.io)
+    # On Debian Trixie+, the docker CLI is a separate package from docker.io
+    if apt-cache show docker-cli &>/dev/null 2>&1; then
+        APT_PACKAGES+=(docker-cli)
+    fi
+else
+    echo "    Docker already installed, skipping docker.io"
 fi
+
+apt-get install -y --no-install-recommends "${APT_PACKAGES[@]}"
 
 echo "==> Installing containerlab ..."
 bash -c "$(curl -sL https://get.containerlab.dev)"
