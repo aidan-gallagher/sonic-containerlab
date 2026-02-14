@@ -30,9 +30,9 @@ Optional:
   -h, --help        Show this help message
 
 Examples:
-  sudo $(basename "$0") --lab simple-lab
-  sudo $(basename "$0") --lab simple-lab --image /path/to/sonic-vs.img.gz
-  sudo $(basename "$0") --lab simple-lab --no-cleanup
+  $(basename "$0") --lab simple-lab
+  $(basename "$0") --lab simple-lab --image /path/to/sonic-vs.img.gz
+  $(basename "$0") --lab simple-lab --no-cleanup
 EOF
     exit "${1:-0}"
 }
