@@ -42,10 +42,13 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-echo "==> Installing dependencies ..."
+echo "==> Installing containerlab ..."
+bash -c "$(curl -sL https://get.containerlab.dev)"
+
+echo "==> Installing apt dependencies ..."
 apt-get update -qy
 apt-get install -y --no-install-recommends \
-    containerlab \
+    curl \
     docker.io \
     python3 \
     python3-paramiko \
