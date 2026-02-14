@@ -89,4 +89,8 @@ if [ -n "${SUDO_USER:-}" ]; then
 fi
 
 echo ""
+echo "==> Verifying installation ..."
+check_prerequisites
+
+echo ""
 echo "Done! All dependencies installed."
