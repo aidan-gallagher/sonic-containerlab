@@ -99,7 +99,7 @@ if [ -n "$IMAGE_FILE" ]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WAIT_TIMEOUT=300
+WAIT_TIMEOUT=3600  # 1 hour
 
 "$SCRIPT_DIR/install-dependencies.sh" --check
 
