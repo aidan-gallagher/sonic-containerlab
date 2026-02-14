@@ -6,6 +6,6 @@ test-simple-lab:
   tags:
     - vm-linux-x86-16cpu-32gb
   script:
-    - ./scripts/install-dependencies.sh
+    - sudo ./scripts/install-dependencies.sh
     - curl -fSL -o /tmp/sonic-vs.img.gz https://pub-b38eb23466d442f88f85da770f4feea7.r2.dev/sonic-vs.img.gz
-    - ./scripts/runlab.sh --lab simple-lab --image /tmp/sonic-vs.img.gz
+    - sudo ./scripts/runlab.sh --lab simple-lab --image /tmp/sonic-vs.img.gz
