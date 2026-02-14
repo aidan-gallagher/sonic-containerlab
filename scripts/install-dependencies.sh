@@ -25,16 +25,17 @@ check_prerequisites() {
         fi
     done
 
-    # Verify the user can actually talk to the Docker daemon
-    if command -v docker &>/dev/null && ! docker info &>/dev/null; then
-        echo "    [ERROR]   docker daemon not accessible (log out and back in, or run: newgrp docker)"
-        fail=true
-    fi
+    # Non-root users need docker group and clab_admins group access
+    if [ "$(id -u)" -ne 0 ]; then
+        if command -v docker &>/dev/null && ! docker info &>/dev/null; then
+            echo "    [ERROR]   docker daemon not accessible (run with sudo, or: sudo usermod -aG docker \$USER && newgrp docker)"
+            fail=true
+        fi
 
-    # Verify the user is in the containerlab admin group
-    if getent group clab_admins &>/dev/null && ! id -nG 2>/dev/null | grep -qw clab_admins; then
-        echo "    [ERROR]   user not in clab_admins group (log out and back in, or run: newgrp clab_admins)"
-        fail=true
+        if getent group clab_admins &>/dev/null && ! id -nG 2>/dev/null | grep -qw clab_admins; then
+            echo "    [ERROR]   user not in clab_admins group (run with sudo, or: sudo usermod -aG clab_admins \$USER && newgrp clab_admins)"
+            fail=true
+        fi
     fi
 
     if [ -e /dev/kvm ]; then
