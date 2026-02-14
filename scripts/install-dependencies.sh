@@ -74,6 +74,11 @@ apt-get install -y --no-install-recommends \
     python3-pytest \
     yq
 
+# On Debian Trixie+, the docker CLI is a separate package from docker.io
+if apt-cache show docker-cli &>/dev/null; then
+    apt-get install -y --no-install-recommends docker-cli
+fi
+
 echo "==> Installing containerlab ..."
 bash -c "$(curl -sL https://get.containerlab.dev)"
 
