@@ -101,43 +101,7 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WAIT_TIMEOUT=300
 
-# =============================================================================
-# PREREQUISITES CHECK
-# =============================================================================
-
-echo "==> Checking prerequisites ..."
-PREREQ_FAIL=false
-
-check_cmd() {
-    local cmd="$1"
-    if command -v "$cmd" &>/dev/null; then
-        echo "    [OK]      $cmd"
-    else
-        echo "    [MISSING] $cmd"
-        PREREQ_FAIL=true
-    fi
-}
-
-check_cmd docker
-check_cmd containerlab
-check_cmd yq
-check_cmd python3
-check_cmd pytest
-
-# /dev/kvm is required for QEMU inside Docker
-if [ -e /dev/kvm ]; then
-    echo "    [OK]      /dev/kvm"
-else
-    echo "    [MISSING] /dev/kvm"
-    PREREQ_FAIL=true
-fi
-
-if [ "$PREREQ_FAIL" = true ]; then
-    echo ""
-    echo "Error: missing prerequisites. Install them with:"
-    echo "    sudo ./scripts/install-dependencies.sh"
-    exit 1
-fi
+"$SCRIPT_DIR/install-dependencies.sh" --check
 
 # =============================================================================
 # DISCOVER: find topology file and SONiC node
