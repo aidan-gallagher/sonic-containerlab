@@ -199,6 +199,7 @@ if [ -n "$SONIC_NODE" ]; then
             echo "    Error: timed out after ${WAIT_TIMEOUT}s (status: $STATUS)"
             exit 1
         fi
+        
         # =============================================================
         # TEMP DEBUG — remove after CI is working
         # =============================================================
