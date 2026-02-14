@@ -110,7 +110,6 @@ containerlab destroy
 │   └── sonic-build-container-from-qcow2.sh  # Builds vrnetlab Docker image from SONiC qcow2
 └── simple-lab/
     ├── simple-lab.clab.yml                # Containerlab topology
-    ├── config_db.json                     # SONiC startup configuration
     └── simple_test.py                     # Automated validation tests
 ```
 
@@ -141,48 +140,32 @@ ssh -4 admin@clab-simple-lab-sonic
 WARP must also be disconnected before building Docker images
 (`warp-cli disconnect`).
 
-### config_db.json must match the SONiC image
-
-`config_db.json` is a near-complete dump of the SONiC default configuration.
-If you switch to a different SONiC image version, `config_db.json` must be
-regenerated. See the procedure below.
-
-<details>
-<summary>Regenerate config_db.json</summary>
-
-```bash
-# 1. Temporarily comment out startup-config in the .clab.yml
-# 2. Deploy and wait for healthy
-cd simple-lab
-containerlab deploy
-
-# 3. Dump the default config
-sshpass -p admin ssh -4 -o StrictHostKeyChecking=no admin@clab-simple-lab-sonic \
-  "sonic-cfggen -d --print-data" > config_db.json
-
-# 4. Apply IP changes and remove mac
-python3 -c "
-import json
-with open('config_db.json') as f:
-    cfg = json.load(f)
-del cfg['INTERFACE']['Ethernet0|10.0.0.0/31']
-cfg['INTERFACE']['Ethernet0|192.168.1.1/24'] = {}
-del cfg['INTERFACE']['Ethernet4|10.0.0.2/31']
-cfg['INTERFACE']['Ethernet4|192.168.2.1/24'] = {}
-del cfg['DEVICE_METADATA']['localhost']['mac']
-with open('config_db.json', 'w') as f:
-    json.dump(cfg, f, indent=4, sort_keys=True)
-"
-
-# 5. Restore startup-config in the .clab.yml and redeploy
-```
-
-</details>
-
 ## Future Work
 
-- **Automate config_db.json regeneration** -- detect config mismatch and
-  regenerate automatically during `runlab.sh`.
+- **Custom SONiC configuration** -- the simple-lab currently uses SONiC's
+  default interface IPs (`10.0.0.0/31`, `10.0.0.2/31`) to avoid needing any
+  switch configuration. Future labs with custom IP schemes or non-default
+  settings will need a way to configure the SONiC VM. There are two approaches,
+  each with tradeoffs:
+
+  1. **`startup-config` (config_db.json)** -- containerlab's native mechanism.
+     A full `config_db.json` is injected into the VM at boot via vrnetlab's
+     `/backup.sh restore`. The problem: `config_db.json` is tightly coupled to
+     the SONiC image version. It contains a `VERSIONS.DATABASE.VERSION` field
+     and schema that must match the image exactly, or the restore fails and the
+     VM goes unhealthy. Switching images requires a manual regeneration
+     procedure (boot with defaults, dump config, apply customizations). This
+     version coupling previously caused CI failures.
+
+  2. **Post-boot SSH commands** -- after the VM is healthy, SSH in and run
+     SONiC `config` CLI commands (e.g., `sudo config interface ip add ...`).
+     This is version-independent and simple for small changes, but cannot be
+     done via the `.clab.yml` `exec` block. For `sonic-vm` nodes, `exec` runs
+     on the outer vrnetlab container (the QEMU wrapper), not inside the SONiC
+     VM. Reaching the VM requires SSH, and the VM takes ~60s to boot, so the
+     commands must run after the health-wait step in `runlab.sh`, not in the
+     topology file.
+
 - **Tier 2/3 colo lab** -- eBGP topology with an edge router + 2 SONiC ToRs
   + servers, matching Cloudflare's standalone colo design.
 - **GitLab CI pipeline** -- run `./scripts/runlab.sh --lab simple-lab --image <path>`

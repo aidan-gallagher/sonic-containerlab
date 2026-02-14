@@ -19,7 +19,6 @@ scripts/
 └── sonic-build-container-from-qcow2.sh  # Builds vrnetlab Docker image from SONiC qcow2
 simple-lab/
 ├── simple-lab.clab.yml                # Containerlab topology definition
-├── config_db.json                     # SONiC startup config (auto-generated, do not hand-edit)
 └── simple_test.py                     # Pytest validation suite
 ```
 
@@ -121,11 +120,6 @@ Install everything with: `sudo ./scripts/install-dependencies.sh`
 - **Style**: Follow containerlab conventions. Nodes define `kind` and `image`;
   links use `endpoints` arrays.
 
-### JSON (config_db.json)
-
-- **Do not hand-edit**. Regenerate when switching SONiC images (see README.md).
-- **Formatting**: 4-space indent, sorted keys (`json.dump(cfg, f, indent=4, sort_keys=True)`).
-
 ## Error Handling Patterns
 
 - **Python tests**: Assertions include f-string messages with the actual output
@@ -143,8 +137,6 @@ Install everything with: `sudo ./scripts/install-dependencies.sh`
   nodes. Always use `-4` flag for SSH or force `socket.AF_INET` in Python.
 - **WARP + Docker builds**: Disconnect WARP before building Docker images
   (`warp-cli disconnect`).
-- **config_db.json version mismatch**: If the SONiC image changes,
-  `config_db.json` must be regenerated. See README.md for the procedure.
 
 ## Adding New Tests
 

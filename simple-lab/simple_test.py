@@ -229,31 +229,31 @@ class TestNetwork:
         assert "up" in out.lower(), f"Ethernet4 not up:\n{out}"
 
     def test_ethernet0_ip(self, sonic):
-        """Ethernet0 has the expected IP address (192.168.1.1/24)."""
+        """Ethernet0 has the expected IP address (10.0.0.0/31)."""
         out = sonic.run("show ip interface")
-        assert "192.168.1.1/24" in out, f"Ethernet0 missing IP 192.168.1.1/24:\n{out}"
+        assert "10.0.0.0/31" in out, f"Ethernet0 missing IP 10.0.0.0/31:\n{out}"
 
     def test_ethernet4_ip(self, sonic):
-        """Ethernet4 has the expected IP address (192.168.2.1/24)."""
+        """Ethernet4 has the expected IP address (10.0.0.2/31)."""
         out = sonic.run("show ip interface")
-        assert "192.168.2.1/24" in out, f"Ethernet4 missing IP 192.168.2.1/24:\n{out}"
+        assert "10.0.0.2/31" in out, f"Ethernet4 missing IP 10.0.0.2/31:\n{out}"
 
     def test_server1_pings_gateway(self):
-        """server1 can reach its gateway (192.168.1.1)."""
-        out = docker_exec(SERVER1, "ping -c 3 -W 2 192.168.1.1")
+        """server1 can reach its gateway (10.0.0.0)."""
+        out = docker_exec(SERVER1, "ping -c 3 -W 2 10.0.0.0")
         assert "0% packet loss" in out
 
     def test_server2_pings_gateway(self):
-        """server2 can reach its gateway (192.168.2.1)."""
-        out = docker_exec(SERVER2, "ping -c 3 -W 2 192.168.2.1")
+        """server2 can reach its gateway (10.0.0.2)."""
+        out = docker_exec(SERVER2, "ping -c 3 -W 2 10.0.0.2")
         assert "0% packet loss" in out
 
     def test_server1_reaches_server2(self):
         """server1 can ping server2 (end-to-end through SONiC)."""
-        out = docker_exec(SERVER1, "ping -c 3 -W 2 192.168.2.2")
+        out = docker_exec(SERVER1, "ping -c 3 -W 2 10.0.0.3")
         assert "0% packet loss" in out
 
     def test_server2_reaches_server1(self):
         """server2 can ping server1 (end-to-end through SONiC)."""
-        out = docker_exec(SERVER2, "ping -c 3 -W 2 192.168.1.2")
+        out = docker_exec(SERVER2, "ping -c 3 -W 2 10.0.0.1")
         assert "0% packet loss" in out
