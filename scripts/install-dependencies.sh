@@ -31,6 +31,12 @@ check_prerequisites() {
         fail=true
     fi
 
+    # Verify the user is in the containerlab admin group
+    if getent group clab_admins &>/dev/null && ! id -nG 2>/dev/null | grep -qw clab_admins; then
+        echo "    [ERROR]   user not in clab_admins group (log out and back in, or run: newgrp clab_admins)"
+        fail=true
+    fi
+
     if [ -e /dev/kvm ]; then
         echo "    [OK]      /dev/kvm"
     else
@@ -82,10 +88,16 @@ fi
 echo "==> Installing containerlab ..."
 bash -c "$(curl -sL https://get.containerlab.dev)"
 
-# Add the calling user to the docker group
+# Add the calling user to required groups
 if [ -n "${SUDO_USER:-}" ]; then
     usermod -aG docker "$SUDO_USER"
     echo "==> Added $SUDO_USER to the docker group"
+
+    # containerlab requires membership in clab_admins (created by containerlab install)
+    if getent group clab_admins &>/dev/null; then
+        usermod -aG clab_admins "$SUDO_USER"
+        echo "==> Added $SUDO_USER to the clab_admins group"
+    fi
 fi
 
 echo ""
