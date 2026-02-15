@@ -13,7 +13,7 @@ The switches boot with default IPs. A session-scoped fixture SSHes in
 and reconfigures interfaces + eBGP before any tests run.
 
 Usage:
-    cd bgp-lab
+    cd labs/bgp-lab
     containerlab deploy
     # wait for both VMs to become healthy
     pytest bgp_test.py -v

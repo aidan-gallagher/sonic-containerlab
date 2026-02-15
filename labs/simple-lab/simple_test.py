@@ -5,7 +5,7 @@ Simple-lab validation tests.
 Runs health checks and network tests against a deployed simple-lab topology.
 
 Usage:
-    cd simple-lab
+    cd labs/simple-lab
     containerlab deploy          # deploy first
     pytest tests/validate.py -v  # run tests
 """

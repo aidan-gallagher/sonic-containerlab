@@ -22,22 +22,28 @@ Or manually ensure you have:
 
 1. Download `sonic-vs.img.gz` from [sonic.software](https://sonic.software/).
 
-2. Run the full lifecycle (build, deploy, test, cleanup):
+2. Run the full lifecycle (build, deploy, test, cleanup) for all labs:
 
 ```bash
-./scripts/runlab.sh --lab simple-lab --image /path/to/sonic-vs.img.gz
+./scripts/runlab.sh --image /path/to/sonic-vs.img.gz
 ```
 
 If the Docker image is already built, skip the build step:
 
 ```bash
-./scripts/runlab.sh --lab simple-lab
+./scripts/runlab.sh
+```
+
+To run a single lab:
+
+```bash
+./scripts/runlab.sh --lab labs/simple-lab --image /path/to/sonic-vs.img.gz
 ```
 
 To leave the lab running after tests (for debugging or manual inspection):
 
 ```bash
-./scripts/runlab.sh --lab simple-lab --no-cleanup
+./scripts/runlab.sh --lab labs/simple-lab --no-cleanup
 ```
 
 See all options with `./scripts/runlab.sh --help`.
@@ -58,7 +64,7 @@ Cloudflare WARP must be disconnected first (`warp-cli disconnect`).
 ### Deploy a lab
 
 ```bash
-cd simple-lab
+cd labs/simple-lab
 containerlab deploy
 ```
 
@@ -87,7 +93,7 @@ Node names follow the pattern `clab-<lab-name>-<node-name>`.
 ### Run tests
 
 ```bash
-cd simple-lab
+cd labs/simple-lab
 pytest -v                 # all tests
 pytest -v -k "TestHealth" # one test class
 pytest -v -k "test_ethernet0_up"  # one test
@@ -96,7 +102,7 @@ pytest -v -k "test_ethernet0_up"  # one test
 ### Destroy the lab
 
 ```bash
-cd simple-lab
+cd labs/simple-lab
 containerlab destroy
 ```
 
@@ -108,12 +114,13 @@ containerlab destroy
 │   ├── install-dependencies.sh            # Installs all apt dependencies
 │   ├── runlab.sh                          # Generic lifecycle: [build →] deploy → wait → test → cleanup
 │   └── sonic-build-container-from-qcow2.sh  # Builds vrnetlab Docker image from SONiC qcow2
-├── simple-lab/
-│   ├── simple-lab.clab.yml                # Containerlab topology (1 switch, 2 servers)
-│   └── simple_test.py                     # Health, network, MTU, ARP tests
-└── bgp-lab/
-    ├── bgp-lab.clab.yml                   # Containerlab topology (2 switches, 2 servers)
-    └── bgp_test.py                        # Health, interface, BGP, forwarding tests
+└── labs/
+    ├── simple-lab/
+    │   ├── simple-lab.clab.yml            # Containerlab topology (1 switch, 2 servers)
+    │   └── simple_test.py                 # Health, network, MTU, ARP tests
+    └── bgp-lab/
+        ├── bgp-lab.clab.yml              # Containerlab topology (2 switches, 2 servers)
+        └── bgp_test.py                   # Health, interface, BGP, forwarding tests
 ```
 
 ## Labs
@@ -162,8 +169,8 @@ WARP must also be disconnected before building Docker images
 
 - **Tier 2/3 colo lab** -- eBGP topology with an edge router + 2 SONiC ToRs
   + servers, matching Cloudflare's standalone colo design.
-- **GitLab CI pipeline** -- run `./scripts/runlab.sh --lab simple-lab --image <path>`
-  in CI to validate on every push.
+- **GitLab CI pipeline** -- run `./scripts/runlab.sh --image <path>`
+  in CI to validate all labs on every push.
 
 ## Configuration Approach
 

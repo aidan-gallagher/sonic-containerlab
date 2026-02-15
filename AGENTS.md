@@ -17,12 +17,13 @@ scripts/
 ├── install-dependencies.sh            # Installs all apt dependencies
 ├── runlab.sh                          # Generic lifecycle: [build →] deploy → wait → test → cleanup
 └── sonic-build-container-from-qcow2.sh  # Builds vrnetlab Docker image from SONiC qcow2
-simple-lab/
-├── simple-lab.clab.yml                # Containerlab topology (1 switch, 2 servers)
-└── simple_test.py                     # Health, network, MTU, ARP tests
-bgp-lab/
-├── bgp-lab.clab.yml                   # Containerlab topology (2 switches, 2 servers)
-└── bgp_test.py                        # Health, interface, BGP, forwarding tests
+labs/
+├── simple-lab/
+│   ├── simple-lab.clab.yml            # Containerlab topology (1 switch, 2 servers)
+│   └── simple_test.py                 # Health, network, MTU, ARP tests
+└── bgp-lab/
+    ├── bgp-lab.clab.yml              # Containerlab topology (2 switches, 2 servers)
+    └── bgp_test.py                   # Health, interface, BGP, forwarding tests
 ```
 
 ## Build / Deploy / Test Commands
@@ -38,17 +39,17 @@ There is no traditional build system. The workflow is:
 ### Deploy the lab
 
 ```bash
-cd simple-lab
+cd labs/simple-lab
 containerlab deploy          # SONiC VM takes ~60s to boot
 ```
 
 ### Run all tests
 
 ```bash
-cd simple-lab
+cd labs/simple-lab
 pytest simple_test.py -v
 
-cd bgp-lab
+cd labs/bgp-lab
 pytest bgp_test.py -v
 ```
 
@@ -63,15 +64,17 @@ pytest simple_test.py -v "simple_test.py::TestHealth::test_redis_ping"    # full
 ### Full lifecycle (build + deploy + test + cleanup)
 
 ```bash
-./scripts/runlab.sh --lab simple-lab --image /path/to/sonic-vs.img.gz   # build, deploy, test, cleanup
-./scripts/runlab.sh --lab simple-lab                                     # skip build, deploy + test only
-./scripts/runlab.sh --lab simple-lab --no-cleanup                        # deploy + test, leave lab running
+./scripts/runlab.sh --image /path/to/sonic-vs.img.gz                          # build + run all labs
+./scripts/runlab.sh                                                            # run all labs (no build)
+./scripts/runlab.sh --lab labs/simple-lab --image /path/to/sonic-vs.img.gz     # build + run one lab
+./scripts/runlab.sh --lab labs/simple-lab                                       # run one lab (no build)
+./scripts/runlab.sh --lab labs/simple-lab --no-cleanup                          # run one lab, leave running
 ```
 
 ### Destroy the lab
 
 ```bash
-cd simple-lab
+cd labs/simple-lab
 containerlab destroy
 ```
 
@@ -147,8 +150,8 @@ Install everything with: `sudo ./scripts/install-dependencies.sh`
 ## Adding New Tests
 
 1. Add test methods to the appropriate class in the lab's test file:
-   - `simple-lab/simple_test.py`: `TestHealth`, `TestNetwork`, `TestMTU`, `TestARP`
-   - `bgp-lab/bgp_test.py`: `TestHealth`, `TestInterfaces`, `TestBGP`, `TestForwarding`
+   - `labs/simple-lab/simple_test.py`: `TestHealth`, `TestNetwork`, `TestMTU`, `TestARP`
+   - `labs/bgp-lab/bgp_test.py`: `TestHealth`, `TestInterfaces`, `TestBGP`, `TestForwarding`
 2. Tests needing SSH to the switch take `sonic` (or `sonic1`/`sonic2`) as a
    parameter (pytest fixture). Tests against Linux containers use `docker_exec()`.
    Use `docker_exec_rc()` when the command is expected to fail (returns
