@@ -90,6 +90,17 @@ def docker_exec(container, cmd):
     return result.stdout.strip()
 
 
+def docker_exec_rc(container, cmd):
+    """Run a command inside a container, return (stdout, returncode) without asserting."""
+    result = subprocess.run(
+        ["docker", "exec", container] + cmd.split(),
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    return result.stdout.strip(), result.returncode
+
+
 # =============================================================================
 # FIXTURES
 # =============================================================================
@@ -257,3 +268,61 @@ class TestNetwork:
         """server2 can ping server1 (end-to-end through SONiC)."""
         out = docker_exec(SERVER2, "ping -c 3 -W 2 10.0.0.1")
         assert "0% packet loss" in out
+
+
+# =============================================================================
+# LAYER 3: MTU
+# =============================================================================
+
+
+class TestMTU:
+    """Does the switch forward different frame sizes correctly?"""
+
+    def test_default_mtu_ping(self):
+        """A 1400-byte payload passes through the switch (well under default MTU)."""
+        out = docker_exec(SERVER1, "ping -c 3 -W 2 -s 1400 10.0.0.3")
+        assert "0% packet loss" in out
+
+    def test_jumbo_frame_forwarding(self):
+        """An 8000-byte payload passes through the switch (under 9100 default MTU)."""
+        out = docker_exec(SERVER1, "ping -c 3 -W 2 -s 8000 -M do 10.0.0.3")
+        assert "0% packet loss" in out
+
+    def test_oversized_frame_blocked(self):
+        """A 9100-byte payload is too large (headers push it over 9100 MTU)."""
+        _, rc = docker_exec_rc(SERVER1, "ping -c 1 -W 2 -s 9100 -M do 10.0.0.3")
+        assert rc != 0, "Oversized ping should have failed but succeeded"
+
+
+# =============================================================================
+# LAYER 4: ARP / NEIGHBOR RESOLUTION
+# =============================================================================
+
+
+class TestARP:
+    """Does ARP resolution work through the switch?"""
+
+    def test_arp_entry_exists_after_ping(self, sonic):
+        """The switch has an ARP entry for server1 after traffic flows."""
+        # Ensure traffic has flowed so ARP is populated
+        docker_exec(SERVER1, "ping -c 1 -W 2 10.0.0.0")
+        out = sonic.run("show arp")
+        assert "10.0.0.1" in out, f"No ARP entry for server1:\n{out}"
+
+    def test_neighbor_state_valid(self, sonic):
+        """Kernel neighbor entries for both servers are REACHABLE or STALE."""
+        docker_exec(SERVER1, "ping -c 1 -W 2 10.0.0.0")
+        docker_exec(SERVER2, "ping -c 1 -W 2 10.0.0.2")
+        # Check neighbors on data interfaces only (not eth0/management)
+        checks = [("10.0.0.1", "Ethernet0"), ("10.0.0.3", "Ethernet4")]
+        for ip, iface in checks:
+            out = sonic.run(f"ip -4 neigh show {ip} dev {iface}")
+            assert out, f"No neighbor entry for {ip} on {iface}"
+            assert "FAILED" not in out, f"Neighbor {ip} on {iface} is FAILED:\n{out}"
+
+    def test_arping_from_server(self):
+        """server1 gets an ARP reply from its gateway (L2 ARP, not ICMP)."""
+        out = docker_exec(SERVER1, "arping -c 3 -I eth1 10.0.0.0")
+        assert "0% unanswered" in out or "3 response" in out.lower(), (
+            f"arping failed:\n{out}"
+        )

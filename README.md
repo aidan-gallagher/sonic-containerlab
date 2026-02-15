@@ -108,10 +108,28 @@ containerlab destroy
 │   ├── install-dependencies.sh            # Installs all apt dependencies
 │   ├── runlab.sh                          # Generic lifecycle: [build →] deploy → wait → test → cleanup
 │   └── sonic-build-container-from-qcow2.sh  # Builds vrnetlab Docker image from SONiC qcow2
-└── simple-lab/
-    ├── simple-lab.clab.yml                # Containerlab topology
-    └── simple_test.py                     # Automated validation tests
+├── simple-lab/
+│   ├── simple-lab.clab.yml                # Containerlab topology (1 switch, 2 servers)
+│   └── simple_test.py                     # Health, network, MTU, ARP tests
+└── bgp-lab/
+    ├── bgp-lab.clab.yml                   # Containerlab topology (2 switches, 2 servers)
+    └── bgp_test.py                        # Health, interface, BGP, forwarding tests
 ```
+
+## Labs
+
+### simple-lab
+
+One SONiC switch routing between two servers. Tests health, interface state,
+L3 reachability, MTU/jumbo frame forwarding, and ARP resolution. Uses SONiC's
+default IPs -- no switch configuration needed.
+
+### bgp-lab
+
+Two SONiC switches in an eBGP peering (AS 65001 / AS 65002), each with a
+server behind it. Tests BGP session establishment, route learning, and
+end-to-end traffic forwarding via BGP-learned routes. Uses post-boot SSH
+commands to configure IPs and BGP (no `config_db.json` injection).
 
 ## Known Issues
 
@@ -142,31 +160,21 @@ WARP must also be disconnected before building Docker images
 
 ## Future Work
 
-- **Custom SONiC configuration** -- the simple-lab currently uses SONiC's
-  default interface IPs (`10.0.0.0/31`, `10.0.0.2/31`) to avoid needing any
-  switch configuration. Future labs with custom IP schemes or non-default
-  settings will need a way to configure the SONiC VM. There are two approaches,
-  each with tradeoffs:
-
-  1. **`startup-config` (config_db.json)** -- containerlab's native mechanism.
-     A full `config_db.json` is injected into the VM at boot via vrnetlab's
-     `/backup.sh restore`. The problem: `config_db.json` is tightly coupled to
-     the SONiC image version. It contains a `VERSIONS.DATABASE.VERSION` field
-     and schema that must match the image exactly, or the restore fails and the
-     VM goes unhealthy. Switching images requires a manual regeneration
-     procedure (boot with defaults, dump config, apply customizations). This
-     version coupling previously caused CI failures.
-
-  2. **Post-boot SSH commands** -- after the VM is healthy, SSH in and run
-     SONiC `config` CLI commands (e.g., `sudo config interface ip add ...`).
-     This is version-independent and simple for small changes, but cannot be
-     done via the `.clab.yml` `exec` block. For `sonic-vm` nodes, `exec` runs
-     on the outer vrnetlab container (the QEMU wrapper), not inside the SONiC
-     VM. Reaching the VM requires SSH, and the VM takes ~60s to boot, so the
-     commands must run after the health-wait step in `runlab.sh`, not in the
-     topology file.
-
 - **Tier 2/3 colo lab** -- eBGP topology with an edge router + 2 SONiC ToRs
   + servers, matching Cloudflare's standalone colo design.
 - **GitLab CI pipeline** -- run `./scripts/runlab.sh --lab simple-lab --image <path>`
   in CI to validate on every push.
+
+## Configuration Approach
+
+The simple-lab uses SONiC's default interface IPs (`10.0.0.0/31`,
+`10.0.0.2/31`) to avoid needing any switch configuration.
+
+The bgp-lab uses **post-boot SSH commands**: after the VMs are healthy, a
+session-scoped pytest fixture SSHes into each switch and runs SONiC `config`
+CLI commands (e.g., `sudo config interface ip add ...`) and FRR vtysh commands
+to set up eBGP. This is version-independent and avoids the `config_db.json`
+version-coupling problem (where the config schema must match the SONiC image
+exactly). The tradeoff is that configuration cannot be done via the `.clab.yml`
+`exec` block -- for `sonic-vm` nodes, `exec` runs on the outer vrnetlab
+container, not inside the SONiC VM.

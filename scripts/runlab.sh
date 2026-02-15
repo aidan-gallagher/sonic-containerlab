@@ -126,15 +126,19 @@ if [ -z "$LAB_NAME" ] || [ "$LAB_NAME" = "null" ]; then
     exit 1
 fi
 
-# Find a sonic-vm node (if any) for the health-wait step
-SONIC_NODE="$(yq -r '.topology.nodes | to_entries[] | select(.value.kind == "sonic-vm") | .key' "$TOPO_FILE")"
-if [ -n "$SONIC_NODE" ]; then
-    SONIC_CONTAINER="clab-${LAB_NAME}-${SONIC_NODE}"
-    echo "==> Lab: ${LAB_NAME} (topology: $(basename "$TOPO_FILE"))"
-    echo "    SONiC VM node: ${SONIC_NODE} (container: ${SONIC_CONTAINER})"
+# Find all sonic-vm nodes (if any) for the health-wait step
+mapfile -t SONIC_NODES < <(yq -r '.topology.nodes | to_entries[] | select(.value.kind == "sonic-vm") | .key' "$TOPO_FILE")
+
+echo "==> Lab: ${LAB_NAME} (topology: $(basename "$TOPO_FILE"))"
+if [ ${#SONIC_NODES[@]} -gt 0 ]; then
+    SONIC_CONTAINERS=()
+    for node in "${SONIC_NODES[@]}"; do
+        container="clab-${LAB_NAME}-${node}"
+        SONIC_CONTAINERS+=("$container")
+        echo "    SONiC VM node: ${node} (container: ${container})"
+    done
 else
-    echo "==> Lab: ${LAB_NAME} (topology: $(basename "$TOPO_FILE"))"
-    echo "    No sonic-vm node found, will skip health-wait step"
+    echo "    No sonic-vm nodes found, will skip health-wait step"
 fi
 
 # =============================================================================
@@ -186,27 +190,41 @@ containerlab deploy -t "$TOPO_FILE"
 # 3. WAIT: poll until SONiC VM is healthy (skip if no sonic-vm node)
 # =============================================================================
 
-if [ -n "$SONIC_NODE" ]; then
-    echo "==> Waiting for SONiC VM to become healthy (timeout: ${WAIT_TIMEOUT}s) ..."
+if [ ${#SONIC_NODES[@]} -gt 0 ]; then
+    echo "==> Waiting for SONiC VMs to become healthy (timeout: ${WAIT_TIMEOUT}s) ..."
     SECONDS=0
-    while true; do
-        STATUS=$(docker inspect --format='{{.State.Health.Status}}' "$SONIC_CONTAINER" 2>/dev/null || echo "unknown")
-        if [ "$STATUS" = "healthy" ]; then
-            echo "    SONiC VM is healthy (took ${SECONDS}s)"
+
+    # Track which containers are still pending
+    declare -A PENDING
+    for container in "${SONIC_CONTAINERS[@]}"; do
+        PENDING["$container"]=1
+    done
+
+    while [ ${#PENDING[@]} -gt 0 ]; do
+        for container in "${!PENDING[@]}"; do
+            STATUS=$(docker inspect --format='{{.State.Health.Status}}' "$container" 2>/dev/null || echo "unknown")
+            if [ "$STATUS" = "healthy" ]; then
+                echo "    ${container} is healthy (took ${SECONDS}s)"
+                unset "PENDING[$container]"
+            fi
+        done
+        if [ ${#PENDING[@]} -eq 0 ]; then
             break
         fi
         if [ "$SECONDS" -ge "$WAIT_TIMEOUT" ]; then
-            echo "    Error: timed out after ${WAIT_TIMEOUT}s (status: $STATUS)"
+            echo "    Error: timed out after ${WAIT_TIMEOUT}s"
+            echo "    Still waiting on: ${!PENDING[*]}"
             exit 1
         fi
         sleep 10
     done
+
     # Allow extra time for SONiC services (FRR, syncd, ASIC programming)
     # to fully converge after the container health check passes.
     echo "    Waiting 30s for services to converge ..."
     sleep 30
 else
-    echo "==> Skipping health-wait (no sonic-vm node)"
+    echo "==> Skipping health-wait (no sonic-vm nodes)"
 fi
 
 # =============================================================================

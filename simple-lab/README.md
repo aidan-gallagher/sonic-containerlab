@@ -37,3 +37,15 @@ Tests in `simple_test.py` are split into two classes:
 - Ethernet0 and Ethernet4 operationally up with correct IPs
 - server1 and server2 can ping their gateways
 - End-to-end ping between servers through SONiC
+
+**TestMTU** -- frame size forwarding:
+
+- 1400-byte payload passes through (well under default MTU)
+- 8000-byte jumbo payload passes through (under 9100 default MTU)
+- 9100-byte payload blocked (headers push it over MTU limit)
+
+**TestARP** -- ARP / neighbor resolution:
+
+- Switch has ARP entry for server1 after traffic flows
+- Kernel neighbor entries for both servers are REACHABLE or STALE
+- server1 gets ARP replies from its gateway (L2 arping)
