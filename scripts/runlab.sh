@@ -199,19 +199,6 @@ if [ -n "$SONIC_NODE" ]; then
             echo "    Error: timed out after ${WAIT_TIMEOUT}s (status: $STATUS)"
             exit 1
         fi
-        
-        # =============================================================
-        # TEMP DEBUG — remove after CI is working
-        # =============================================================
-        echo "    [${SECONDS}s] status: $STATUS"
-        if (( SECONDS % 60 < 10 )); then
-            echo "    --- docker logs (last 20 lines) ---"
-            docker logs --tail 20 "$SONIC_CONTAINER" 2>&1 || true
-            echo "    --- end docker logs ---"
-        fi
-        # =============================================================
-        # END TEMP DEBUG
-        # =============================================================
         sleep 10
     done
     # Allow extra time for SONiC services (FRR, syncd, ASIC programming)
