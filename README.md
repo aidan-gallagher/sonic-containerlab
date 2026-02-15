@@ -94,9 +94,7 @@ Node names follow the pattern `clab-<lab-name>-<node-name>`.
 
 ```bash
 cd labs/simple-lab
-pytest -v                 # all tests
-pytest -v -k "TestHealth" # one test class
-pytest -v -k "test_ethernet0_up"  # one test
+pytest
 ```
 
 ### Destroy the lab
@@ -169,8 +167,6 @@ WARP must also be disconnected before building Docker images
 
 - **Tier 2/3 colo lab** -- eBGP topology with an edge router + 2 SONiC ToRs
   + servers, matching Cloudflare's standalone colo design.
-- **GitLab CI pipeline** -- run `./scripts/runlab.sh --image <path>`
-  in CI to validate all labs on every push.
 
 ## Configuration Approach
 
