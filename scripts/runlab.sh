@@ -214,6 +214,10 @@ if [ -n "$SONIC_NODE" ]; then
         # =============================================================
         sleep 10
     done
+    # Allow extra time for SONiC services (FRR, syncd, ASIC programming)
+    # to fully converge after the container health check passes.
+    echo "    Waiting 30s for services to converge ..."
+    sleep 30
 else
     echo "==> Skipping health-wait (no sonic-vm node)"
 fi
