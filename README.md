@@ -85,7 +85,7 @@ docker exec -it clab-simple-lab-server1 bash
 docker exec -it clab-simple-lab-server2 bash
 
 # SONiC switch (use -4 to avoid WARP IPv6 issues)
-ssh -4 admin@clab-simple-lab-sonic
+ssh -o PubkeyAuthentication=no -4 admin@clab-simple-lab-sonic
 ```
 
 Node names follow the pattern `clab-<lab-name>-<node-name>`.
