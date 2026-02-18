@@ -113,12 +113,9 @@ containerlab destroy
 │   ├── runlab.sh                          # Generic lifecycle: [build →] deploy → wait → test → cleanup
 │   └── sonic-build-container-from-qcow2.sh  # Builds vrnetlab Docker image from SONiC qcow2
 └── labs/
-    ├── simple-lab/
-    │   ├── simple-lab.clab.yml            # Containerlab topology (1 switch, 2 servers)
-    │   └── simple_test.py                 # Health, network, MTU, ARP tests
-    └── bgp-lab/
-        ├── bgp-lab.clab.yml              # Containerlab topology (2 switches, 2 servers)
-        └── bgp_test.py                   # Health, interface, BGP, forwarding tests
+    └── simple-lab/
+        ├── simple-lab.clab.yml            # Containerlab topology (1 switch, 2 servers)
+        └── simple_test.py                 # Health, network, MTU, ARP tests
 ```
 
 ## Labs
@@ -128,13 +125,6 @@ containerlab destroy
 One SONiC switch routing between two servers. Tests health, interface state,
 L3 reachability, MTU/jumbo frame forwarding, and ARP resolution. Uses SONiC's
 default IPs -- no switch configuration needed.
-
-### bgp-lab
-
-Two SONiC switches in an eBGP peering (AS 65001 / AS 65002), each with a
-server behind it. Tests BGP session establishment, route learning, and
-end-to-end traffic forwarding via BGP-learned routes. Uses post-boot SSH
-commands to configure IPs and BGP (no `config_db.json` injection).
 
 ## Known Issues
 
@@ -172,12 +162,3 @@ WARP must also be disconnected before building Docker images
 
 The simple-lab uses SONiC's default interface IPs (`10.0.0.0/31`,
 `10.0.0.2/31`) to avoid needing any switch configuration.
-
-The bgp-lab uses **post-boot SSH commands**: after the VMs are healthy, a
-session-scoped pytest fixture SSHes into each switch and runs SONiC `config`
-CLI commands (e.g., `sudo config interface ip add ...`) and FRR vtysh commands
-to set up eBGP. This is version-independent and avoids the `config_db.json`
-version-coupling problem (where the config schema must match the SONiC image
-exactly). The tradeoff is that configuration cannot be done via the `.clab.yml`
-`exec` block -- for `sonic-vm` nodes, `exec` runs on the outer vrnetlab
-container, not inside the SONiC VM.

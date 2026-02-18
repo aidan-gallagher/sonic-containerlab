@@ -18,12 +18,9 @@ scripts/
 ├── runlab.sh                          # Generic lifecycle: [build →] deploy → wait → test → cleanup
 └── sonic-build-container-from-qcow2.sh  # Builds vrnetlab Docker image from SONiC qcow2
 labs/
-├── simple-lab/
-│   ├── simple-lab.clab.yml            # Containerlab topology (1 switch, 2 servers)
-│   └── simple_test.py                 # Health, network, MTU, ARP tests
-└── bgp-lab/
-    ├── bgp-lab.clab.yml              # Containerlab topology (2 switches, 2 servers)
-    └── bgp_test.py                   # Health, interface, BGP, forwarding tests
+└── simple-lab/
+    ├── simple-lab.clab.yml            # Containerlab topology (1 switch, 2 servers)
+    └── simple_test.py                 # Health, network, MTU, ARP tests
 ```
 
 ## Build / Deploy / Test Commands
@@ -48,9 +45,6 @@ containerlab deploy          # SONiC VM takes ~60s to boot
 ```bash
 cd labs/simple-lab
 pytest simple_test.py -v
-
-cd labs/bgp-lab
-pytest bgp_test.py -v
 ```
 
 ### Run a single test
@@ -151,16 +145,11 @@ Install everything with: `sudo ./scripts/install-dependencies.sh`
 
 1. Add test methods to the appropriate class in the lab's test file:
    - `labs/simple-lab/simple_test.py`: `TestHealth`, `TestNetwork`, `TestMTU`, `TestARP`
-   - `labs/bgp-lab/bgp_test.py`: `TestHealth`, `TestInterfaces`, `TestBGP`, `TestForwarding`
-2. Tests needing SSH to the switch take `sonic` (or `sonic1`/`sonic2`) as a
-   parameter (pytest fixture). Tests against Linux containers use `docker_exec()`.
-   Use `docker_exec_rc()` when the command is expected to fail (returns
-   `(stdout, returncode)` without asserting).
+2. Tests needing SSH to the switch take `sonic` as a parameter (pytest fixture).
+   Tests against Linux containers use `docker_exec()`. Use `docker_exec_rc()`
+   when the command is expected to fail (returns `(stdout, returncode)` without
+   asserting).
 3. Follow the existing pattern: one-line docstring, single assertion with a
    descriptive failure message.
 4. If adding a new test category, create a new `class Test*` with a section
    header comment block.
-5. For new labs with custom switch configuration, use the bgp-lab pattern:
-   a session-scoped `autouse=True` fixture that SSHes in and applies config
-   via `sudo config ...` and `vtysh` commands after boot. This avoids
-   `config_db.json` version coupling.
