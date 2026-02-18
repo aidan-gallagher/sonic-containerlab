@@ -128,15 +128,6 @@ default IPs -- no switch configuration needed.
 
 ## Known Issues
 
-### QEMU in Docker
-
-This project uses the SONiC virtual machine image (`sonic-vs.img.gz`) running
-under QEMU inside a Docker container (via
-[vrnetlab](https://github.com/srl-labs/vrnetlab)), rather than the SONiC Docker
-image (`docker-sonic-vs.gz`). The VM image is closer to a real SONiC deployment:
-inside the VM, each SONiC service (bgp, swss, syncd, etc.) runs in its own
-Docker container, just like on physical hardware.
-
 ### Cloudflare WARP and IPv6
 
 If Cloudflare WARP is running, SSH to SONiC nodes will be slow (~45s) because
@@ -153,12 +144,3 @@ ssh -4 admin@clab-simple-lab-sonic
 WARP must also be disconnected before building Docker images
 (`warp-cli disconnect`).
 
-## Future Work
-
-- **Tier 2/3 colo lab** -- eBGP topology with an edge router + 2 SONiC ToRs
-  + servers, matching Cloudflare's standalone colo design.
-
-## Configuration Approach
-
-The simple-lab uses SONiC's default interface IPs (`10.0.0.0/31`,
-`10.0.0.2/31`) to avoid needing any switch configuration.
